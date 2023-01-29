@@ -1,0 +1,34 @@
+<html>
+	<head>
+		<title>TrafficSim</title>
+		<link rel="stylesheet" type="text/css" href="common.css">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		
+		<!-- <script src="https://cdn.staticfile.org/vue/2.2.2/vue.min.js"></script>
+        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+        <script src="https://cdn.bootcss.com/qs/6.5.1/qs.min.js"></script> -->
+	</head>
+	
+	<body>
+		<style> body { margin: 0; } canvas { width: 100%; height: 100% } </style>
+		<style>
+            #display_control_bar {
+                /* position: fixed; */
+                /* visibility: hidden; */
+                /* display: none; */
+                height: 50px;
+            }
+			#info {
+                display: inline-block;
+				background-color: white;
+				color: blue;
+                font-family: 'Consolas';
+			}
+		</style>
+        <div id="display_control_bar">
+			<div id="info"></div>
+		</div>
+
+        <script src="/frontend/index_bundle.js" type="module"></script>
+	</body>
+</html>
