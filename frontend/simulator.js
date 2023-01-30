@@ -57,6 +57,13 @@ class Simulator {
         //     {'mileage': 100, 'event_name': 'change_curvature', 'curvature': +1/600},
         // ];
         // this.road_data = [
+        //     {'initial_lanes_cnt': 5},
+        //     {'mileage': 400, 'event_name': 'change_curvature', 'curvature': 0},
+        //     {'mileage': 800, 'event_name': 'change_curvature', 'curvature': 0},
+        //     {'mileage': 1200, 'event_name': 'change_curvature', 'curvature': 0},
+        //     {'mileage': 1600, 'event_name': 'change_curvature', 'curvature': 0},
+        // ];
+        // this.road_data = [
         //     {'initial_lanes_cnt': 3},
         // ];
 

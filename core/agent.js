@@ -139,7 +139,10 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
         this.linear_acceleration = 0;
 
         
-        this.simple_go_along_lane(interval); return;  // "no-switch-lane" experiment : proves that the simple_go_along_lane() is nice.
+        // this.simple_go_along_lane(interval); return;  // "no-switch-lane" experiment : proves that the simple_go_along_lane() is nice.
+
+        // this.switch_lane_to( Math.floor(this.position_and_pose.lane) + 0.5 + 1 , interval); return;
+        // this.switch_lane_to( Math.floor(this.position_and_pose.mileage / 400) + 0.5 , interval); return;
 
         var r1 = this.relative_position_to_next_disappeared_lane();
         if( r1 != null && r1.remaining_lane < 0 && r1.ratio_abs < 50 ) {
@@ -260,24 +263,61 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
 
     switch_lane_to(target_lane , interval) {
 
+        // const SWITCHING_LANE_deviation_rad = 8 / 180 * Math.PI;
+        // const SWITCHING_LANE_deviation_rad = 2 / 180 * Math.PI;
+
+        const SWITCHING_LANE_ahead_mileage = 100;
+        const SWITCHING_LANE_deviation_rad = Math.atan(this.environment.road.lane_width / SWITCHING_LANE_ahead_mileage);
+
         var current_lane = this.position_and_pose.lane;
-        var expected_deviation_rad = 8 / 180 * Math.PI * (target_lane - current_lane) / 0.5;
-        if(expected_deviation_rad > +8 / 180 * Math.PI) expected_deviation_rad = +8 / 180 * Math.PI;
-        if(expected_deviation_rad < -8 / 180 * Math.PI) expected_deviation_rad = -8 / 180 * Math.PI;
+
+        // var expected_deviation_rad = SWITCHING_LANE_deviation_rad * (target_lane - current_lane) / 0.5;
+        // if(expected_deviation_rad > +SWITCHING_LANE_deviation_rad) expected_deviation_rad = +SWITCHING_LANE_deviation_rad;
+        // if(expected_deviation_rad < -SWITCHING_LANE_deviation_rad) expected_deviation_rad = -SWITCHING_LANE_deviation_rad;
+
+        var expected_deviation_rad = 0;
+        if(target_lane - current_lane > +0.1) expected_deviation_rad = +SWITCHING_LANE_deviation_rad;
+        if(target_lane - current_lane < -0.1) expected_deviation_rad = -SWITCHING_LANE_deviation_rad;
 
         // -------------
         // x as deviation_diff , f(x) as curvature_delta
 
-        // // f(x) = k1 * x
-        // const k1 = 1 / 15 * interval;
-        // // this.curvature -= (this.position_and_pose.deviation_rad - expected_deviation_rad) * k1;
+        // f(x) = k1 * x
+        // const k1 = 1 / 8.00 * interval;
+        // this.curvature -= (this.position_and_pose.deviation_rad - expected_deviation_rad) * k1;
 
-        // // f(x) = k1 * x = k2 * log(x + 1)  @ x=x0   ==> k2 = k1 * x0 / log(x0 + 1)
+        // f(x) = k1 * x = k2 * log(x + 1)  @ x=x0   ==> k2 = k1 * x0 / log(x0 + 1)
         // const diff_0 = 8 / 180 * Math.PI;
         // const k2 = k1 * diff_0 / Math.log(diff_0 + 1);
         // this.curvature -= Math.log(this.position_and_pose.deviation_rad - expected_deviation_rad + 1) * k2;
 
+        // const k3 = 1 / 0.10 * interval;
+        // this.curvature -= (this.position_and_pose.deviation_rad - expected_deviation_rad) * Math.abs(this.position_and_pose.deviation_rad - expected_deviation_rad) * k3;
+
+        var deviation_rad_diff = this.position_and_pose.deviation_rad - expected_deviation_rad;
+        // var deviation_rad_diff_abs = Math.abs(deviation_rad_diff);
+        // var deviation_rad_diff_sgn = Math.sign(deviation_rad_diff);
+
+        // if(deviation_rad_diff_abs > 0) {
+        //     const X_WHEN_FY_HALF = SWITCHING_LANE_deviation_rad / 6;
+        //     const FY_WHEN_X_0 = 0.01;
+        //     const MAX_CURVATURE_CHANGE = 1 / 400 * interval;
+
+        //     const X_WHEN_Y_0 = X_WHEN_FY_HALF;
+        //     const Y_WHEN_X_0 = Math.tan((FY_WHEN_X_0 - 0.5) * Math.PI);
+
+        //     var x_abs = deviation_rad_diff_abs;
+        //     var y_abs = (- Y_WHEN_X_0 / X_WHEN_Y_0) * x_abs + Y_WHEN_X_0;
+        //     var fy_abs = Math.atan(y_abs) / Math.PI + 0.5;  // falls into (0,1)
+        //     this.curvature -= fy_abs * deviation_rad_diff_sgn * MAX_CURVATURE_CHANGE;
+        // }
+
         // Failed.
+
+        // Proved impossible to "adjust" rather than "assign" curvature value: 
+            // Curvature is the first derivative of direction (deviation), 
+            // so the "adjustment" of curvature is the second derivative of direction (deviation).
+            // Therefore it's hard to adjust the curvation during switching lanes.
 
         // -------------
         
@@ -286,6 +326,7 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
         // road curvature
         // self curvature
 
+        this.curvature = -0.2 * deviation_rad_diff;
 
         console.log('switch_lane_to() : agent_id='+this.agent_id+' ,\n current_lane='+current_lane+' ,\n target_lane='+target_lane+' ,\n expected_deviation_rad='+expected_deviation_rad+' ,\n position_and_pose.deviation_rad='+this.position_and_pose.deviation_rad+' ,\n curvature='+this.curvature+' (turning_radius='+(1/this.curvature)+' , turning_angle='+(Math.atan(this.curvature * 3) / Math.PI * 180)+'deg) ,\n ');
     }
