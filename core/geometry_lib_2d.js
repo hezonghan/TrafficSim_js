@@ -38,10 +38,18 @@ class PlaneWorldPositionAndPose {
             this.direction_rad,
         );
     }
+
+    distance_to(another_position_and_pose) {
+        var dx = this.x - another_position_and_pose.x;
+        var dz = this.z - another_position_and_pose.z;
+        return Math.sqrt(dx*dx + dz*dz);
+    }
     
 }
 
 class PlaneWorldArc {
+
+    // This "arc" is unbounded, that is, it has no pre-determined "end".
 
     constructor(start_position_and_pose , curvature) {
         this.start_position_and_pose = start_position_and_pose;
@@ -89,6 +97,7 @@ class PlaneWorldArc {
             return {
                 'arc_length': dot_product_1_2,
                 'nearest_position_and_pose': nearest_position_and_pose,
+                'distance': nearest_position_and_pose.distance_to(given_position_and_pose),
 
                 'rightward': - cross_product_1_2,
                 'deviation_rad': normalize_direction_rad(given_position_and_pose.direction_rad - nearest_position_and_pose.direction_rad , -Math.PI),
@@ -107,12 +116,56 @@ class PlaneWorldArc {
             var nearest_position_and_pose = this.calculate_end_position_and_pose(arc_length);
             return {
                 'arc_length': arc_length,
+                // 'arc_angle_rad': arc_angle_rad,
                 'nearest_position_and_pose': nearest_position_and_pose,
+                'distance': nearest_position_and_pose.distance_to(given_position_and_pose),
+
                 'rightward': (this.turning_radius_abs - len3) * (this.curvature > 0 ? 1 : -1),
                 'deviation_rad': normalize_direction_rad(given_position_and_pose.direction_rad - nearest_position_and_pose.direction_rad , -Math.PI),
             };
         }
     }
+
+    find_nearest_point_on_bounded_arc(given_position_and_pose , length_lo_bound , length_hi_bound , min_arc_angle_rad=0) {
+        var unbounded_nearest = this.find_nearest_point_on_arc(given_position_and_pose , min_arc_angle_rad);
+        var bounded_nearest = null;
+
+        if(length_lo_bound <= unbounded_nearest.arc_length && unbounded_nearest.arc_length <= length_hi_bound) {
+            bounded_nearest = {
+                'arc_length': unbounded_nearest.arc_length,
+                'nearest_position_and_pose': unbounded_nearest.nearest_position_and_pose,
+                'distance': unbounded_nearest.distance,
+            };
+
+        }else {
+            var position_and_pose_lo = this.calculate_end_position_and_pose(length_lo_bound);
+            var position_and_pose_hi = this.calculate_end_position_and_pose(length_hi_bound);
+
+            var distance_to_lo = position_and_pose_lo.distance_to(given_position_and_pose);
+            var distance_to_hi = position_and_pose_hi.distance_to(given_position_and_pose);
+
+            if(distance_to_lo < distance_to_hi) {
+                bounded_nearest = {
+                    'arc_length': length_lo_bound,
+                    'nearest_position_and_pose': position_and_pose_lo,
+                    'distance': distance_to_lo,
+                };
+
+            }else {
+                bounded_nearest = {
+                    'arc_length': length_hi_bound,
+                    'nearest_position_and_pose': position_and_pose_hi,
+                    'distance': distance_to_hi,
+                };
+            }
+        }
+
+        return {
+            'unbounded': unbounded_nearest,
+            'bounded': bounded_nearest,
+        };
+    }
+
 }
 
 export { PlaneWorldPositionAndPose , PlaneWorldArc };

@@ -189,32 +189,44 @@ class PlaneWorldSimpleRoad extends Road {
         // var min_rightward = null;
         var matched_arc_id = -1;
         var matched_nearest = null;
+        // console.log('\ncomplete_position_and_pose():\nincomplete_pp='+JSON.stringify(incomplete_new_position_and_pose));
+
+        // for(var arc_id = 0 ; arc_id < this.arcs.length ; arc_id += 1) {
+        //     var arc = this.arcs[arc_id];
+        //     var nearest = arc.arc.find_nearest_point_on_arc(incomplete_new_position_and_pose , -0.002);
+        //     // console.log('arc_id='+arc_id+' : nearest=');
+        //     // console.log(nearest);
+        //     console.log('\n\tarc_id='+arc_id+'\n\tarc='+JSON.stringify(arc)+'\n\tnearest='+JSON.stringify(nearest));
+        //
+        //     if(nearest.arc_length < 0) continue;
+        //     if(arc_id != this.arcs.length-1 && nearest.arc_length >= arc.arc_length) continue;  // if finished total_mileage, arc_id points to the final arc.
+        //     if(nearest.rightward < 0.1) continue;
+        //
+        //     if(matched_arc_id == -1 || nearest.rightward < matched_nearest.rightward) {
+        //         matched_arc_id = arc_id;
+        //         matched_nearest = nearest;
+        //     }
+        // }
+        // if(matched_arc_id == -1) {
+        //     // throw 'No arc matched: x='+incomplete_new_position_and_pose.x+' , z='+incomplete_new_position_and_pose.z;
+        //     incomplete_new_position_and_pose.arc_id = -1;
+        //     return incomplete_new_position_and_pose;
+        // }
         
         for(var arc_id = 0 ; arc_id < this.arcs.length ; arc_id += 1) {
             var arc = this.arcs[arc_id];
-            var nearest = arc.arc.find_nearest_point_on_arc(incomplete_new_position_and_pose , -0.002);
-            // console.log('arc_id='+arc_id+' : nearest=');
-            // console.log(nearest);
+            var nearest = arc.arc.find_nearest_point_on_bounded_arc(incomplete_new_position_and_pose , 0 , arc.arc_length);
 
-            if(nearest.arc_length < 0) continue;
-            if(arc_id != this.arcs.length-1 && nearest.arc_length >= arc.arc_length) continue;  // if finished total_mileage, arc_id points to the final arc.
-            if(nearest.rightward < 0.1) continue;
-
-            if(matched_arc_id == -1 || nearest.rightward < matched_nearest.rightward) {
+            if(matched_arc_id == -1 || nearest.bounded.distance < matched_nearest.bounded.distance) {
                 matched_arc_id = arc_id;
                 matched_nearest = nearest;
             }
         }
-        if(matched_arc_id == -1) {
-            // throw 'No arc matched: x='+incomplete_new_position_and_pose.x+' , z='+incomplete_new_position_and_pose.z;
-            incomplete_new_position_and_pose.arc_id = -1;
-            return incomplete_new_position_and_pose;
-        }
 
         // console.log('matched_arc_id='+matched_arc_id);
-        incomplete_new_position_and_pose.mileage = this.arcs[matched_arc_id].start_mileage + matched_nearest.arc_length;
-        incomplete_new_position_and_pose.lane = matched_nearest.rightward / this.lane_width;
-        incomplete_new_position_and_pose.deviation_rad = matched_nearest.deviation_rad;
+        incomplete_new_position_and_pose.mileage = this.arcs[matched_arc_id].start_mileage + matched_nearest.unbounded.arc_length;
+        incomplete_new_position_and_pose.lane = matched_nearest.unbounded.rightward / this.lane_width;
+        incomplete_new_position_and_pose.deviation_rad = matched_nearest.unbounded.deviation_rad;
         incomplete_new_position_and_pose.arc_id = matched_arc_id;
 
         for(var segment_id = 0 ; segment_id < this.segments.length ; segment_id += 1) {
