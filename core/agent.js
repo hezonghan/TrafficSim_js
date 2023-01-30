@@ -143,6 +143,7 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
 
         // this.switch_lane_to( Math.floor(this.position_and_pose.lane) + 0.5 + 1 , interval); return;
         // this.switch_lane_to( Math.floor(this.position_and_pose.mileage / 400) + 0.5 , interval); return;
+        // this.switch_lane_to( Math.floor(this.position_and_pose.lane) + 0.5 , interval); return;
 
         var r1 = this.relative_position_to_next_disappeared_lane();
         var r2 = this.relative_position_to_destination();
@@ -335,7 +336,7 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
         // road curvature
         // self curvature
 
-        this.curvature = -0.02 * deviation_rad_diff;
+        this.curvature = -0.10 * deviation_rad_diff;  // 0.10 is good , see "/experiments/2023_0130_03_switch_lane"
 
         // console.log('switch_lane_to() : agent_id='+this.agent_id+' ,\n current_lane='+current_lane+' ,\n target_lane='+target_lane+' ,\n expected_deviation_rad='+expected_deviation_rad+' ,\n position_and_pose.deviation_rad='+this.position_and_pose.deviation_rad+' ,\n curvature='+this.curvature+' (turning_radius='+(1/this.curvature)+' , turning_angle='+(Math.atan(this.curvature * 3) / Math.PI * 180)+'deg) ,\n ');
     }

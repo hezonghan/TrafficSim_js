@@ -23,11 +23,27 @@ def load_json_file(filepath):
 #     (1200, +1), (1320, +1), (1440, +1), (1560, +1), (1680, -2),
 #     (2000, 0),
 # ]
+# initial_lanes_cnt = 5
 # fig_size = (64, 16)
 # data_name, mileage_range, lanes_range = '../2023_0130_02/2023_0130_2111', (0, 2000), (0, 11)
 # data_name, mileage_range, lanes_range = '../2023_0130_02/2023_0130_2133', (0, 2000), (-0.1, 11.1)
 # data_name, mileage_range, lanes_range = '../2023_0130_02/2023_0130_2341', (0, 2000), (-0.1, 11.1)
 # data_name, mileage_range, lanes_range = '../2023_0130_02/2023_0130_2349', (0, 2000), (-0.1, 11.1)
+
+# segments = [(150, +1), (250, -1), (300, -1), (500, +1), (700, +1)]
+# initial_lanes_cnt = 3
+# fig_size = (21, 16)
+# data_name, mileage_range, lanes_range = '../2023_0130_03_switch_lane/2023_0131_0044_never_switch_k=0.06', (0, 700), (0, 5)
+# data_name, mileage_range, lanes_range = '../2023_0130_03_switch_lane/2023_0131_0047_never_switch_k=0.10', (0, 700), (0, 5)
+# data_name, mileage_range, lanes_range = '../2023_0130_03_switch_lane/2023_0131_0050_never_switch_k=0.20', (0, 700), (0, 5)
+# data_name, mileage_range, lanes_range = '../2023_0130_03_switch_lane/2023_0131_0052_never_switch_k=0.40', (0, 700), (0, 5)
+# data_name, mileage_range, lanes_range = '../2023_0130_03_switch_lane/2023_0131_0055_never_switch_k=0.80', (0, 700), (0, 5)
+# data_name, mileage_range, lanes_range = '../2023_0130_03_switch_lane/2023_0131_0101_never_switch_k=0.60', (0, 700), (0, 5)
+# data_name, mileage_range, lanes_range = '../2023_0130_03_switch_lane/2023_0131_0104_k=0.06', (0, 700), (0, 5)
+# data_name, mileage_range, lanes_range = '../2023_0130_03_switch_lane/2023_0131_0105_k=0.08', (0, 700), (0, 5)
+# data_name, mileage_range, lanes_range = '../2023_0130_03_switch_lane/2023_0131_0108_k=0.10', (0, 700), (0, 5)
+# data_name, mileage_range, lanes_range = '../2023_0130_03_switch_lane/2023_0131_0111_k=0.15', (0, 700), (0, 5)
+# data_name, mileage_range, lanes_range = '../2023_0130_03_switch_lane/2023_0131_0113_k=0.20', (0, 700), (0, 5)
 
 # data_name, mileage_range, lanes_range = '', (0, 700), (0, 3)
 # data_name, mileage_range, lanes_range = '', (0, 700), (0, 3)
@@ -48,7 +64,7 @@ for agent_id, track_history in histories.items():
 # for lane in range(lanes_range[0], lanes_range[1]+1):
 #     plt.plot([mileage_range[0], mileage_range[1]], [lane, lane], linestyle='-.', color='#cccccc')
 current_mileage = 0
-current_lanes_cnt = 5
+current_lanes_cnt = initial_lanes_cnt
 for segment in segments:
     for lane in range(0, current_lanes_cnt+1):
         plt.plot([current_mileage, segment[0]], [lane, lane], linestyle='-.', color='#cccccc')
