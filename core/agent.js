@@ -145,21 +145,26 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
         // this.switch_lane_to( Math.floor(this.position_and_pose.mileage / 400) + 0.5 , interval); return;
 
         var r1 = this.relative_position_to_next_disappeared_lane();
-        if( r1 != null && r1.remaining_lane < 0 && r1.ratio_abs < 50 ) {
+        var r2 = this.relative_position_to_destination();
+        if(
+                r1 != null && r1.remaining_lane < 0 && r1.ratio_abs < 200
+                && (r2 == null || r1.remaining_mileage < r2.remaining_mileage)
+            ) {
+            // console.log('agent_id='+this.agent_id+'\npp='+JSON.stringify(this.position_and_pose)+'\nr1='+JSON.stringify(r1));
             // Switch leftward to avoid disappeared lanes on the right.
             this.switch_lane_to(r1.target_lane , interval);
 
         }else {
-            var r2 = this.relative_position_to_destination();
-            if( r2 != null && r2.remaining_lane > 0.1 && r2.ratio_abs < 50 ) {
-                // Switch rightward to prepare to exit.
-                this.switch_lane_to(r2.target_lane , interval);
+            if( r2 != null && r2.remaining_lane > 0.1 && r2.ratio_abs < 200 ) {
+                // Want to switch rightward to prepare to exit.
+                var target_lane = Math.min(r2.target_lane , this.environment.road.segments[this.position_and_pose.segment_id].lanes_cnt - 0.5);
+                this.switch_lane_to(target_lane , interval);
 
             }else {
                 // Otherwise, go along current lane.
 
-                this.simple_go_along_lane(interval);
-                // this.switch_lane_to( Math.floor(this.position_and_pose.lane) + 0.5 , interval );
+                // this.simple_go_along_lane(interval);  // see  /experiments/2023_0130_02/2023_0130_2349.svg
+                this.switch_lane_to( Math.floor(this.position_and_pose.lane) + 0.5 , interval );  // see  /experiments/2023_0130_02/2023_0130_2341.svg
             }
         }
 
@@ -199,7 +204,7 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
 
         if(this.collision_time < 0) {
             this.collision_time = this.environment.t;
-            console.log('Agent #'+this.agent_id+' collides at time '+this.collision_time+' s.');
+            console.log('Agent #'+this.agent_id+' collides at time '+this.collision_time+' s.\n\npp='+JSON.stringify(this.position_and_pose));
         }
     }
 
@@ -220,7 +225,8 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
         // console.log('agent_id='+this.agent_id+' , t='+this.environment.t+' , x='+this.position_and_pose.x+' , z='+this.position_and_pose.z+' , mileage='+this.position_and_pose.mileage+' , segment_id='+this.position_and_pose.segment_id);
         var current_segment = this.environment.road.segments[current_segment_id];
 
-        var min_lanes_cnt = current_segment.lanes_cnt;
+        // var min_lanes_cnt = current_segment.lanes_cnt;
+        var min_target_lane = this.position_and_pose.lane;
         // var focused_segment_id = -1;
         // var focused_ratio = -1;
         var focused_relative = null;
@@ -228,6 +234,7 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
             var later_segment = this.environment.road.segments[later_segment_id];
             
             var later_relative = {
+                // 'segment_id': later_segment_id,
                 'remaining_mileage': later_segment.start_mileage - this.position_and_pose.mileage,
                 'remaining_lane':    (later_segment.lanes_cnt - 0.5) - this.position_and_pose.lane,
                 'target_lane': (later_segment.lanes_cnt - 0.5),
@@ -236,8 +243,10 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
 
             if(later_relative.remaining_mileage > 800) break;  // too far, cannot see
 
-            if(later_segment.lanes_cnt >= min_lanes_cnt) continue;
-            min_lanes_cnt = later_segment.lanes_cnt;
+            // if(later_segment.lanes_cnt >= min_lanes_cnt) continue;
+            // min_lanes_cnt = later_segment.lanes_cnt;
+            if(later_relative.target_lane >= min_target_lane) continue;
+            min_target_lane = later_relative.target_lane;
 
             if(focused_relative == null || later_relative.ratio_abs < focused_relative.ratio_abs) focused_relative = later_relative;
         }
@@ -326,9 +335,9 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
         // road curvature
         // self curvature
 
-        this.curvature = -0.2 * deviation_rad_diff;
+        this.curvature = -0.02 * deviation_rad_diff;
 
-        console.log('switch_lane_to() : agent_id='+this.agent_id+' ,\n current_lane='+current_lane+' ,\n target_lane='+target_lane+' ,\n expected_deviation_rad='+expected_deviation_rad+' ,\n position_and_pose.deviation_rad='+this.position_and_pose.deviation_rad+' ,\n curvature='+this.curvature+' (turning_radius='+(1/this.curvature)+' , turning_angle='+(Math.atan(this.curvature * 3) / Math.PI * 180)+'deg) ,\n ');
+        // console.log('switch_lane_to() : agent_id='+this.agent_id+' ,\n current_lane='+current_lane+' ,\n target_lane='+target_lane+' ,\n expected_deviation_rad='+expected_deviation_rad+' ,\n position_and_pose.deviation_rad='+this.position_and_pose.deviation_rad+' ,\n curvature='+this.curvature+' (turning_radius='+(1/this.curvature)+' , turning_angle='+(Math.atan(this.curvature * 3) / Math.PI * 180)+'deg) ,\n ');
     }
 
     execute(interval) {
@@ -360,7 +369,7 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
         }
 
         // collision happened before 10 seconds ago.
-        // if(this.collision_time >= 0 && this.environment.t - this.collision_time > 10) this.active = false;
+        if(this.collision_time >= 0 && this.environment.t - this.collision_time > 10) this.active = false;
     }
 
 }

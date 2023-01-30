@@ -64,6 +64,23 @@ class Simulator {
         //     {'mileage': 1600, 'event_name': 'change_curvature', 'curvature': 0},
         // ];
         // this.road_data = [
+        //     {'initial_lanes_cnt': 5},
+        // 
+        //     {'mileage': 200, 'event_name': 'add_lane', 'lanes_cnt': 1},
+        //     {'mileage': 320, 'event_name': 'add_lane', 'lanes_cnt': 1},
+        //     {'mileage': 440, 'event_name': 'add_lane', 'lanes_cnt': 1},
+        //     {'mileage': 560, 'event_name': 'add_lane', 'lanes_cnt': 1},
+        //     {'mileage': 680, 'event_name': 'exit', 'lanes_cnt': 2},
+        // 
+        //     {'mileage': 1200, 'event_name': 'add_lane', 'lanes_cnt': 1},
+        //     {'mileage': 1320, 'event_name': 'add_lane', 'lanes_cnt': 1},
+        //     {'mileage': 1440, 'event_name': 'add_lane', 'lanes_cnt': 1},
+        //     {'mileage': 1560, 'event_name': 'add_lane', 'lanes_cnt': 1},
+        //     {'mileage': 1680, 'event_name': 'exit', 'lanes_cnt': 2},
+        // 
+        //     {'mileage': 2000, 'event_name': 'change_curvature', 'curvature': 0},
+        // ];
+        // this.road_data = [
         //     {'initial_lanes_cnt': 3},
         // ];
 
@@ -278,7 +295,7 @@ class Simulator {
 
         this.environment.delete_inactive_agents();
 
-        if(Object.keys(this.histories).length > 100) {
+        if(Object.keys(this.histories).length % 100 == 0) {
             console.log('histories:');
             console.log(this.histories);
         }
