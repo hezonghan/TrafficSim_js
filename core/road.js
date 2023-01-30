@@ -13,7 +13,7 @@ class Road {
 
 class PlaneWorldSimpleRoad extends Road {
     
-    constructor(road_data , lane_width=2.5) {
+    constructor(road_data , lane_width=3.75) {  // https://baijiahao.baidu.com/s?id=1722403710037648549
         super();
 
         this.road_data = road_data;

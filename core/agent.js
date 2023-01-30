@@ -109,6 +109,11 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
         this.lane_based_collision_threshold = 0.5 / this.environment.road.lane_width;
 
         this.collision_time = -1;
+
+        this.track_history = {
+            mileage: [],
+            lane: [],
+        };
     }
 
     // decide() should control : curvature , linear_acceleration , collision_time
@@ -241,7 +246,14 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
         // turning_angle_rad -= this.position_and_pose.deviation_rad / 0.5 * interval;
         // this.curvature = Math.tan(turning_angle_rad) / 3.0;
 
-        this.curvature -= this.position_and_pose.deviation_rad / 1.5 * interval;  // tan(x) \approx x   for   x \approx 0   so we can remove tangents.
+        this.curvature -= this.position_and_pose.deviation_rad / 0.20 * interval;  // tan(x) \approx x   for   x \approx 0   so we can remove tangents.
+        // According to "/experiments/2023_0130_01_go_along_lane"
+        // which is conducted under the #3 road_data with total mileage of 700m and minimum turning radius of 400m, with lane_width of 3.75m,
+        // coefficient 0.20 is good enough, with lane vibrates within 0.017   * lane_width < 6.4cm.
+        // Although    0.10 is better,      with lane vibrates within 0.00765 * lane_width < 2.9cm, it is not used because
+        //             0.08 will cause severe rotations of agents.
+
+        // turning radius of 400m is small enough for an express-way, see  https://www.zhihu.com/question/272270344
 
         // console.log('simple_go_along_lane() : position_and_pose.deviation_rad='+this.position_and_pose.deviation_rad+' , curvature='+this.curvature+' , interval='+interval);
     }
@@ -282,6 +294,8 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
         if(! this.active) return;  // necessary even if super.execute is called, because super.execute only "returns" to here.
 
         super.execute(interval);
+        this.track_history.mileage.push(this.position_and_pose.mileage);
+        this.track_history.lane.push(this.position_and_pose.lane);
 
         // finish at the destination exit
         var destination_details = this.environment.road.destinations[this.destination]

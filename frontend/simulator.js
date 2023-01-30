@@ -78,6 +78,8 @@ class Simulator {
         this.group_to_agent = [];
         this.idle_groups = [];
 
+        this.histories = {};
+
     }
 
     init_objects() {
@@ -218,6 +220,8 @@ class Simulator {
                     this.groups_objects[group_id].visible = false;
                 }
 
+                this.histories[agent_id] = this.environment.agents[agent_id].track_history;
+
                 continue;
             }
 
@@ -266,6 +270,11 @@ class Simulator {
         }
 
         this.environment.delete_inactive_agents();
+
+        if(Object.keys(this.histories).length > 100) {
+            console.log('histories:');
+            console.log(this.histories);
+        }
     }
 }
 

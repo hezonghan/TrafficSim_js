@@ -5,11 +5,15 @@ import { InteractiveAgent } from './agent.js';
 
 class SimpleAgentsGenerator {
 
-    constructor(road , lane_safety_interval=5) {
+    // constructor(road , lane_safety_interval=5 , p=0.03) {
+    // constructor(road , lane_safety_interval=2.5 , p=0.3) {
+    // constructor(road , lane_safety_interval=1.5 , p=0.5) {
+    constructor(road , lane_safety_interval=6 , p=0.3) {
         this.road = road;
         this.environment = null;
         
         this.lane_safety_interval = lane_safety_interval;
+        this.p = p;
 
         this.entries_last_occupied = []
         for(var entry_idx = 0 ; entry_idx < this.road.entries.length ; entry_idx += 1) this.entries_last_occupied.push(0);
@@ -29,7 +33,7 @@ class SimpleAgentsGenerator {
         // if(old_agents_cnt > 10) return;
 
         var new_agents_cnt = 0;
-        while(new_agents_cnt < current_idle_entries.length && Math.random() < 0.03) new_agents_cnt += 1;
+        while(new_agents_cnt < current_idle_entries.length && Math.random() < this.p) new_agents_cnt += 1;
         if(new_agents_cnt == 0) return;
 
         var new_agents_entries = sample(current_idle_entries , new_agents_cnt);
@@ -50,6 +54,8 @@ class SimpleAgentsGenerator {
                 initial_position_and_pose,
                 initial_speed,
             );
+
+            this.entries_last_occupied[initial_entry] = this.environment.t;
         }
 
         this.environment.agents_cnt = old_agents_cnt + new_agents_cnt;
