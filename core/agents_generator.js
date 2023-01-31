@@ -6,9 +6,9 @@ import { InteractiveAgent } from './agent.js';
 class SimpleAgentsGenerator {
 
     // constructor(road , lane_safety_interval=5 , p=0.03) {
-    // constructor(road , lane_safety_interval=2.5 , p=0.3) {
+    constructor(road , lane_safety_interval=2.5 , p=0.3) {
     // constructor(road , lane_safety_interval=1.5 , p=0.5) {
-    constructor(road , lane_safety_interval=6 , p=0.3) {
+    // constructor(road , lane_safety_interval=6 , p=0.3) {
     // constructor(road , lane_safety_interval=0.5 , p=0.9) {
         this.road = road;
         this.environment = null;

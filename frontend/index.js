@@ -305,7 +305,10 @@ function animate() {
             '('+camera.position.x.toFixed(1)+' , '+camera.position.y.toFixed(1)+' , '+camera.position.z.toFixed(1)+') , '+
             'picthing='+(camera_pitching * 180 / Math.PI).toFixed(1)+' deg , direction='+(camera_rotation_y * 180 / Math.PI).toFixed(1)+' deg , '+
             'speed='+(walking_speed * 1000 / KEYS_HANDLE_INTERVAL).toFixed(2)+'m/s='+(walking_speed * 3600 / KEYS_HANDLE_INTERVAL).toFixed(2)+'km/h , '+
-            'control mode='+control_mode;
+            'control mode='+control_mode+';    '+
+            // Object.keys(simulator.groups_objects).length+' models (using '+Object.keys(simulator.environment.agents).length+');    '+
+            Object.keys(simulator.environment.agents).length+' active / '+simulator.environment.agents_cnt+' agents : reusing '+Object.keys(simulator.groups_objects).length+' 3D models;    '+
+            '';
 }
 
 animate();

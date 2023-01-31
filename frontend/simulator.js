@@ -5,7 +5,7 @@ import { RectAreaLightUniformsLib } from '../node_modules/three/examples/jsm/lig
 
 import { PlaneWorldSimpleRoad } from '../core/road.js';
 import { SimpleAgentsGenerator } from '../core/agents_generator.js';
-import { Environment } from '../core/environment.js';
+import { SimpleRoadEnvironment } from '../core/environment.js';
 import { PlaneWorldPositionAndPose , PlaneWorldArc } from '../core/geometry_lib_2d.js';
 // import {} from '../core';
 
@@ -39,19 +39,19 @@ class Simulator {
         //     {'mileage': 2000, 'event_name': 'change_curvature', 'curvature': 0},
         //     {'mileage': 2500, 'event_name': 'cancel_lane', 'lanes_cnt': 1},
         // ];
-        this.road_data = [
-            {'initial_lanes_cnt': 3},
+        // this.road_data = [
+        //     {'initial_lanes_cnt': 3},
 
-            {'mileage': 100, 'event_name': 'change_curvature', 'curvature': -1/400},
-            {'mileage': 150, 'event_name': 'add_lane'   , 'lanes_cnt': 1},
-            {'mileage': 200, 'event_name': 'change_curvature', 'curvature': 0},
-            {'mileage': 250, 'event_name': 'exit'       , 'lanes_cnt': 1},
-            {'mileage': 300, 'event_name': 'cancel_lane', 'lanes_cnt': 1},
+        //     {'mileage': 100, 'event_name': 'change_curvature', 'curvature': -1/400},
+        //     {'mileage': 150, 'event_name': 'add_lane'   , 'lanes_cnt': 1},
+        //     {'mileage': 200, 'event_name': 'change_curvature', 'curvature': 0},
+        //     {'mileage': 250, 'event_name': 'exit'       , 'lanes_cnt': 1},
+        //     {'mileage': 300, 'event_name': 'cancel_lane', 'lanes_cnt': 1},
 
-            {'mileage': 500, 'event_name': 'add_lane', 'lanes_cnt': 1},
-            {'mileage': 550, 'event_name': 'change_curvature', 'curvature': +1/600},
-            {'mileage': 700, 'event_name': 'add_lane', 'lanes_cnt': 1},
-        ];
+        //     {'mileage': 500, 'event_name': 'add_lane', 'lanes_cnt': 1},
+        //     {'mileage': 550, 'event_name': 'change_curvature', 'curvature': +1/600},
+        //     {'mileage': 700, 'event_name': 'add_lane', 'lanes_cnt': 1},
+        // ];
         // this.road_data = [
         //     {'initial_lanes_cnt': 3},
         //     {'mileage': 100, 'event_name': 'change_curvature', 'curvature': +1/600},
@@ -80,6 +80,25 @@ class Simulator {
         // 
         //     {'mileage': 2000, 'event_name': 'change_curvature', 'curvature': 0},
         // ];
+        // -----------------------------------------
+        // 2023-01-31  A
+        this.road_data = [
+            {'initial_lanes_cnt': 3},
+
+            {'mileage': 100, 'event_name': 'change_curvature', 'curvature': +1/900},
+            {'mileage': 600, 'event_name': 'change_curvature', 'curvature': -1/1800},
+
+            {'mileage': 800, 'event_name': 'add_lane', 'lanes_cnt': 1},
+            {'mileage': 1200, 'event_name': 'exit', 'lanes_cnt': 1},
+            {'mileage': 1400, 'event_name': 'entry', 'lanes_cnt': 1},
+            {'mileage': 1700, 'event_name': 'cancel_lane', 'lanes_cnt': 1},
+
+            {'mileage': 2100, 'event_name': 'change_curvature', 'curvature': +1/800},
+            {'mileage': 2300, 'event_name': 'change_curvature', 'curvature': +1/500},
+            {'mileage': 2500, 'event_name': 'cancel_lane', 'lanes_cnt': 1},
+
+        ];
+        // -----------------------------------------
         // this.road_data = [
         //     {'initial_lanes_cnt': 3},
         // ];
@@ -87,7 +106,7 @@ class Simulator {
         this.road = new PlaneWorldSimpleRoad(this.road_data);
         
         this.agents_generator = new SimpleAgentsGenerator(this.road);
-        this.environment = new Environment(this.road);
+        this.environment = new SimpleRoadEnvironment(this.road);
 
         this.environment.connect(this.agents_generator);
 

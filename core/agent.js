@@ -369,8 +369,8 @@ class PlaneWorldAimedAgent extends PlaneWorldAgent {
 
         }
 
-        // collision happened before 10 seconds ago.
-        if(this.collision_time >= 0 && this.environment.t - this.collision_time > 10) this.active = false;
+        // collision happened before 60 seconds ago.
+        if(this.collision_time >= 0 && this.environment.t - this.collision_time > 60) this.active = false;
     }
 
 }
@@ -384,21 +384,30 @@ class SimpleSignalLights {
 
         this.L_light_start_time = -1;
         this.R_light_start_time = -1;
+        this.LR_lights_state = 0;
     }
 
     left() {
+        if(this.LR_lights_state == 1) return;
+        this.LR_lights_state = 1;
         this.L_light_start_time = this.environment.t;
         this.R_light_start_time = -1;
     }
     right() {
+        if(this.LR_lights_state == 2) return;
+        this.LR_lights_state = 2;
         this.L_light_start_time = -1;
         this.R_light_start_time = this.environment.t;
     }
     double() {
+        if(this.LR_lights_state == 3) return;
+        this.LR_lights_state = 3;
         this.L_light_start_time = this.environment.t;
         this.R_light_start_time = this.environment.t;
     }
     cancel() {
+        if(this.LR_lights_state == 0) return;
+        this.LR_lights_state = 0;
         this.L_light_start_time = -1;
         this.R_light_start_time = -1;
     }
@@ -406,6 +415,16 @@ class SimpleSignalLights {
     is_left_on()  { return (this.L_light_start_time >= 0 && ((this.environment.t - this.L_light_start_time) / this.flashing_interval) % 1 < 0.5 ); }
     is_right_on() { return (this.R_light_start_time >= 0 && ((this.environment.t - this.R_light_start_time) / this.flashing_interval) % 1 < 0.5 ); }
     is_brake_on() { return (this.agent.linear_acceleration < -1e-5); }
+
+    decide(action_fn) {
+        this.action_fn = action_fn;
+    }
+    execute() {
+        if(this.action_fn == null) return;
+        this.action_fn();
+        this.action_fn = null;
+    }
+
 }
 
 class InteractiveAgent extends PlaneWorldAimedAgent {
@@ -423,25 +442,159 @@ class InteractiveAgent extends PlaneWorldAimedAgent {
     decide(interval) {
         if(! this.active) return;  // necessary even if super.decide is called, because super.decide only "returns" to here.
 
-        super.decide(interval);
+        // super.decide(interval);
 
-        // identify collision between agents (lane-based)
-        // identify collision between agents (precise)
+
+        if(this.simple_collision_with_road_identify() || this.simple_collision_with_agents_identify()) {
+            this.simple_response_after_collision();
+            return;
+        }
+
+
+
+        var destination_details = this.environment.road.destinations[this.destination];
+        while(this.position_and_pose.mileage > destination_details.mileage) this.destination += 1;  // modify to next destination.
+        // Note: the last destination is the end of road, so don't worry the modified destination becoming out of range.
+
+
+
+        var r1 = this.relative_position_to_next_disappeared_lane();
+        var r2 = this.relative_position_to_destination();
+        var sorted_agent_pos_range = this.environment.calculate_nearby_agents(this.position_and_pose.mileage - 50 , this.position_and_pose.mileage + 400);
+
+
+        var target_lane = null;
+        if(
+            r1 != null && r1.remaining_lane < 0 && r1.ratio_abs < 200
+            && (r2 == null || r1.remaining_mileage < r2.remaining_mileage)
+        ) {  // Switch leftward to avoid disappeared lanes on the right.
+            target_lane = r1.target_lane;
+
+        }else {
+            if( r2 != null && r2.remaining_lane > 0.1 && r2.ratio_abs < 200 ) {  // Want to switch rightward to prepare to exit.
+                target_lane = Math.min(r2.target_lane , this.environment.road.segments[this.position_and_pose.segment_id].lanes_cnt - 0.5);
+
+            }else {
+                target_lane = Math.floor(this.position_and_pose.lane) + 0.5;
+            }
+        }
+        this.switch_lane_to(target_lane , interval);
+
 
         // control linear_acceleration
+        var same_lane_ahead_nearest_agent_id = -1;
+        var same_lane_ahead_nearest_agent_mileage_diff = -1;
 
+        for(var sorted_agent_pos=sorted_agent_pos_range[0] ; sorted_agent_pos <= sorted_agent_pos_range[1] ; sorted_agent_pos += 1) {
+            var nearby_agent_id = this.environment.sorted_agents[sorted_agent_pos];
+            var nearby_agent = this.environment.agents[nearby_agent_id];
+
+            if(nearby_agent_id == this.agent_id) continue;
+
+            var mileage_diff = nearby_agent.position_and_pose.mileage - this.position_and_pose.mileage;
+            var lane_diff    = nearby_agent.position_and_pose.lane    - this.position_and_pose.lane   ;
+
+            if( Math.abs(lane_diff) < 0.8 && mileage_diff > 0 ) {
+                if(same_lane_ahead_nearest_agent_id == -1 || mileage_diff < same_lane_ahead_nearest_agent_mileage_diff) {
+                    same_lane_ahead_nearest_agent_id = nearby_agent_id;
+                    same_lane_ahead_nearest_agent_mileage_diff = mileage_diff;
+                }
+            }
+
+        }
+
+
+
+        if(this.linear_speed < 110 / 3.6) {
+            this.linear_acceleration = +1.5;
+        }else {
+            this.linear_acceleration = 0;
+        }
+
+        if(same_lane_ahead_nearest_agent_id != -1) {
+            var same_lane_ahead_nearest_agent = this.environment.agents[same_lane_ahead_nearest_agent_id];
+
+            var exact_linear_speed_diff = same_lane_ahead_nearest_agent.linear_speed - this.linear_speed;
+            var exact_mileage_diff = same_lane_ahead_nearest_agent_mileage_diff;
+
+            var human_percepted_linear_speed_diff = exact_linear_speed_diff;
+            var human_percepted_mileage_diff = exact_mileage_diff;
+
+            // this.linear_acceleration = Math.max(0.8 * human_percepted_linear_speed_diff - 0 * human_percepted_mileage_diff, -12);
+            // this.linear_acceleration = 6 * human_percepted_linear_speed_diff / human_percepted_mileage_diff;
+
+            if(human_percepted_linear_speed_diff < 0) {
+                if(human_percepted_mileage_diff < 8) {
+                    this.linear_acceleration = -12;
+                }else {
+                    this.linear_acceleration = - human_percepted_linear_speed_diff * human_percepted_linear_speed_diff / (human_percepted_mileage_diff - 8) * 0.5;
+                }
+            // }else if(human_percepted_mileage_diff < 50) {
+            }else if(human_percepted_mileage_diff / this.linear_speed < 2) {
+                this.linear_acceleration = -1;
+            // }else if(human_percepted_mileage_diff < 100) {
+            }else if(human_percepted_mileage_diff / this.linear_speed < 4) {
+                this.linear_acceleration = 0;
+
+            }else if(this.linear_speed < 110 / 3.6) {
+                this.linear_acceleration = +1.5;
+            }else {
+                this.linear_acceleration = 0;
+            }
+
+        // }else {
+        }
+
+
+        if(this.linear_acceleration < -12) this.linear_acceleration = -12;
+
+        if(this.linear_speed <= 0) {
+            this.linear_speed = 0;
+            if(this.linear_acceleration < 0) this.linear_acceleration = 0;
+        }
+
+
+        // control curvature
         // control lights
     }
 
+    simple_collision_with_agents_identify() {
+        var sorted_agent_pos_range = this.environment.calculate_nearby_agents(this.position_and_pose.mileage - 5 , this.position_and_pose.mileage + 5);
+        for(var sorted_agent_pos=sorted_agent_pos_range[0] ; sorted_agent_pos <= sorted_agent_pos_range[1] ; sorted_agent_pos += 1) {
+            var nearby_agent_id = this.environment.sorted_agents[sorted_agent_pos];
+            var nearby_agent = this.environment.agents[nearby_agent_id];
+
+            if(nearby_agent_id == this.agent_id) continue;
+
+            // if(this.position_and_pose.distance_to(nearby_agent.position_and_pose) < 3) {
+            var mileage_diff_abs = Math.abs(this.position_and_pose.mileage - nearby_agent.position_and_pose.mileage);
+            var lane_diff_abs    = Math.abs(this.position_and_pose.lane    - nearby_agent.position_and_pose.lane   );
+            if(mileage_diff_abs < 3 && lane_diff_abs < 0.6) {
+                console.log('Agent #'+this.agent_id+' and #'+nearby_agent.agent_id+' collides:\n\npp='+JSON.stringify(this.position_and_pose)+'\n\npp='+JSON.stringify(nearby_agent.position_and_pose));
+                return true;
+            }
+        }
+        return false;
+    }
+
     simple_response_after_collision() {
-        if(this.collision_time < 0) this.signal_lights.double();
+        if(this.collision_time < 0) this.signal_lights.decide(this.signal_lights.double);
         super.simple_response_after_collision();
+    }
+
+    switch_lane_to(target_lane , interval) {
+        super.switch_lane_to(target_lane , interval);
+
+        if(target_lane - this.position_and_pose.lane < -0.5) this.signal_lights.decide(this.signal_lights.left); else
+        if(target_lane - this.position_and_pose.lane > +0.5) this.signal_lights.decide(this.signal_lights.right); else
+        this.signal_lights.decide(this.signal_lights.cancel);
     }
 
     execute(interval) {
         if(! this.active) return;  // necessary even if super.execute is called, because super.execute only "returns" to here.
 
         super.execute(interval);
+        this.signal_lights.execute();
     }
 
 }
