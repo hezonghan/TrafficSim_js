@@ -45,7 +45,7 @@ class SimpleAgentsGenerator {
             var initial_entry = new_agents_entries[new_agent_idx];
             var initial_destination = Math.floor(this.road.destinations.length * Math.random());
 
-            var initial_position_and_pose = this.road.entries[initial_entry].position_and_pose.ahead(0);
+            var initial_position_and_pose = this.road.entries[initial_entry].position_and_pose.ahead(0.01);
             var initial_speed = (80 + Math.random() * (120-80)) / 3.6;
 
             this.environment.agents[new_agent_id] = new InteractiveAgent(
