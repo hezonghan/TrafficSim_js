@@ -585,6 +585,22 @@ class InteractiveAgent extends PlaneWorldAimedAgent {
     switch_lane_to(target_lane , interval) {
         super.switch_lane_to(target_lane , interval);
 
+        // var SWITCHING_LANE_ahead_mileage = 100;
+        // // var SWITCHING_LANE_ahead_mileage = this.linear_speed;
+        // // if(SWITCHING_LANE_ahead_mileage < 10) SWITCHING_LANE_ahead_mileage = 10;
+        // var SWITCHING_LANE_deviation_rad = Math.atan(this.environment.road.lane_width / SWITCHING_LANE_ahead_mileage);
+
+        // var expected_deviation_rad = 0;
+        // if(target_lane - this.position_and_pose.lane > +0.1) expected_deviation_rad = +SWITCHING_LANE_deviation_rad;
+        // if(target_lane - this.position_and_pose.lane < -0.1) expected_deviation_rad = -SWITCHING_LANE_deviation_rad;
+
+        // var deviation_rad_diff = this.position_and_pose.deviation_rad - expected_deviation_rad;
+        // // if(deviation_rad_diff > +0.0375) deviation_rad_diff = +0.0375;
+        // // if(deviation_rad_diff < -0.0375) deviation_rad_diff = -0.0375;
+
+        // this.curvature = -0.10 * deviation_rad_diff;
+
+
         if(target_lane - this.position_and_pose.lane < -0.5) this.signal_lights.decide(this.signal_lights.left); else
         if(target_lane - this.position_and_pose.lane > +0.5) this.signal_lights.decide(this.signal_lights.right); else
         this.signal_lights.decide(this.signal_lights.cancel);
