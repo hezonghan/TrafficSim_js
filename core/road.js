@@ -179,6 +179,27 @@ class PlaneWorldSimpleRoad extends Road {
         console.log(this.destinations);
         console.log(this.segments);
         console.log(this.arcs);
+
+
+        this.next_destination_after_entry = [];
+        var next_destination_id = 0;
+        for(var entry_id = 0 ; entry_id < this.entries.length ; entry_id += 1) {
+            while(
+                next_destination_id < this.destinations.length && 
+                this.destinations[next_destination_id].mileage <= this.entries[entry_id].mileage + 0.1
+            ) {
+                next_destination_id += 1;
+            }
+
+            if(next_destination_id == this.destinations.length) {
+                this.next_destination_after_entry.push(-1);
+                throw 'No next destination for entry #'+entry_id+':\n'+
+                    JSON.stringify(this.entries[entry_id])+
+                    '\nActually impossible because the last destination should always be the end of road.\nPlease contact the author.';
+            }else {
+                this.next_destination_after_entry.push(next_destination_id);
+            }
+        }
     }
 
     init_analyze_shape() {

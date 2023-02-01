@@ -43,7 +43,8 @@ class SimpleAgentsGenerator {
             var new_agent_id = old_agents_cnt + new_agent_idx;
 
             var initial_entry = new_agents_entries[new_agent_idx];
-            var initial_destination = Math.floor(this.road.destinations.length * Math.random());
+            var next_destination_after_initial_entry = this.road.next_destination_after_entry[initial_entry];
+            var initial_destination = next_destination_after_initial_entry + Math.floor( (this.road.destinations.length - next_destination_after_initial_entry) * Math.random() );
 
             var initial_position_and_pose = this.road.entries[initial_entry].position_and_pose.ahead(0.01);
             var initial_speed = (80 + Math.random() * (120-80)) / 3.6;
