@@ -493,11 +493,21 @@ class InteractiveAgent extends PlaneWorldAimedAgent {
             var mileage_diff = nearby_agent.position_and_pose.mileage - this.position_and_pose.mileage;
             var lane_diff    = nearby_agent.position_and_pose.lane    - this.position_and_pose.lane   ;
 
-            if( Math.abs(lane_diff) < 0.8 && mileage_diff > 0 ) {
-                if(same_lane_ahead_nearest_agent_id == -1 || mileage_diff < same_lane_ahead_nearest_agent_mileage_diff) {
-                    same_lane_ahead_nearest_agent_id = nearby_agent_id;
-                    same_lane_ahead_nearest_agent_mileage_diff = mileage_diff;
+            if(Math.abs(lane_diff) >= 0.8) continue;
+            if(mileage_diff <= 0) continue;
+
+            // var min_lanes_cnt_between_agents = this.position_and_pose.lane;
+            var min_lanes_cnt_between_agents = Math.max(this.position_and_pose.lane , nearby_agent.position_and_pose.lane) + 0.01;
+            for(var segment_id = this.position_and_pose.segment_id ; segment_id <= nearby_agent.position_and_pose.segment_id ; segment_id += 1) {
+                if(this.environment.road.segments[segment_id].lanes_cnt < min_lanes_cnt_between_agents) {
+                    min_lanes_cnt_between_agents = this.environment.road.segments[segment_id].lanes_cnt;
                 }
+            }
+            if(Math.max(this.position_and_pose.lane , nearby_agent.position_and_pose.lane) > min_lanes_cnt_between_agents) continue;
+
+            if(same_lane_ahead_nearest_agent_id == -1 || mileage_diff < same_lane_ahead_nearest_agent_mileage_diff) {
+                same_lane_ahead_nearest_agent_id = nearby_agent_id;
+                same_lane_ahead_nearest_agent_mileage_diff = mileage_diff;
             }
 
         }
@@ -521,6 +531,8 @@ class InteractiveAgent extends PlaneWorldAimedAgent {
 
             // this.linear_acceleration = Math.max(0.8 * human_percepted_linear_speed_diff - 0 * human_percepted_mileage_diff, -12);
             // this.linear_acceleration = 6 * human_percepted_linear_speed_diff / human_percepted_mileage_diff;
+
+            // if( 1200-30 <= this.position_and_pose.mileage && this.position_and_pose.mileage <= 1200 && this.position_and_pose.lane > 3 ) console.log('agent_id='+this.agent_id+'\n\tpp='+JSON.stringify(this.position_and_pose)+'\n\tahead pp='+JSON.stringify(same_lane_ahead_nearest_agent.position_and_pose));
 
             if(human_percepted_linear_speed_diff < 0) {
                 if(human_percepted_mileage_diff < 8) {
