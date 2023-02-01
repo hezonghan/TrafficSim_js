@@ -452,8 +452,7 @@ class InteractiveAgent extends PlaneWorldAimedAgent {
 
 
 
-        var destination_details = this.environment.road.destinations[this.destination];
-        while(this.position_and_pose.mileage > destination_details.mileage) this.destination += 1;  // modify to next destination.
+        while(this.position_and_pose.mileage > this.environment.road.destinations[this.destination].mileage) this.destination += 1;  // modify to next destination.
         // Note: the last destination is the end of road, so don't worry the modified destination becoming out of range.
 
 
