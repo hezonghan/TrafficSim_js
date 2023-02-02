@@ -16,6 +16,20 @@ This platform can simulate the road traffic. It aims at providing basic support 
 
 ## 运行 How to run
 
+可直接访问：
+
+You can directly visit:
+
+[https://hezonghan.github.io/TrafficSim_js/frontend/index.html](https://hezonghan.github.io/TrafficSim_js/frontend/index.html)
+
+
+
+也可下载仓库后运行：
+
+Or you can download the repo, and:
+
+
+
 1、开启文件服务器。Run the file server.
 
 以 Python 自带服务器、本地 10019 端口为例：
