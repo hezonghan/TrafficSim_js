@@ -21,6 +21,7 @@ const camera_init = {
     "pitching_deg": -20,
     "rotation_y_deg": 0
 }
+// const camera_init = { "horizon": 48000 , "pitching_deg": -8.5 , "rotation_y_deg": -55 , "x": 688 , "y": 24 , "z": 238};
 const POSITION_MULTIPLE = 1;
 
 const WINDOW_RESERVED_LEFT = 0 , WINDOW_RESERVED_RIGHT = 0 , WINDOW_RESERVED_UP = 60 , WINDOW_RESERVED_DOWN = 0;
@@ -61,6 +62,7 @@ document.body.appendChild( renderer.domElement );
 // camera.position.set(1 , 1.5 , 6);
 // camera.position.set(1 , 6 , 15);
 camera.position.set(0 , 1.5 , 9);
+// camera.position.set(camera_init.x , camera_init.y , camera_init.z);
 
 
 
