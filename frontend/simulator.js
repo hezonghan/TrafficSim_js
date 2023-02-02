@@ -9,6 +9,28 @@ import { SimpleRoadEnvironment } from '../core/environment.js';
 import { PlaneWorldPositionAndPose , PlaneWorldArc } from '../core/geometry_lib_2d.js';
 // import {} from '../core';
 
+class DoorCurve extends THREE.Curve {
+
+    constructor(safe_height , segments = 20) {
+        super();
+        this.safe_height = safe_height;
+        this.segments = segments;
+    }
+
+    getPoint(i , optionalTarget = new THREE.Vector3() ) {
+        i *= this.segments;
+        // console.log('DoorCurve.getPoint() : i='+i);
+        // if(i <  0.01) return optionalTarget.set(0 , 0 , -1);
+        // if(i > 19.99) return optionalTarget.set(0 , 0 , +1);
+        if(i < 1                ) return optionalTarget.set(0 , this.safe_height * i                 , -1);
+        if(i > this.segments - 1) return optionalTarget.set(0 , this.safe_height * (this.segments-i) , +1);
+        // 1 <= i <= this.segments - 1 :
+        // var theta = (i-1) * 10 / 180 * Math.PI;
+        var theta = (i-1) / (this.segments - 2) * Math.PI;
+        return optionalTarget.set(0 , this.safe_height + Math.sin(theta) * 1.2 , - Math.cos(theta));
+    }
+}
+
 class Simulator {
 
     constructor(scene) {
@@ -127,6 +149,7 @@ class Simulator {
 
     init_objects() {
         this.scene.add(this.create_road_mesh());
+        this.scene.add(this.create_lanes_changing_decoration());
         
         // Assume no agents at the beginning.
 
@@ -173,7 +196,7 @@ class Simulator {
                 var mid_position_and_pose_0 = current_arc.calculate_end_position_and_pose(mileage_0 - current_arc_start_mileage + (lines_debugging ? 0.8 : 0));
                 var mid_position_and_pose_1 = current_arc.calculate_end_position_and_pose(mileage_1 - current_arc_start_mileage - (lines_debugging ? 0.8 : 0));
 
-                console.log('road_event_idx='+road_event_idx+' , mileage_0='+mileage_0+' , mileage_1='+mileage_1+' , mileage_2='+mileage_2+' : lane=[0,'+current_segment_lanes_cnt+']');
+                // console.log('road_event_idx='+road_event_idx+' , mileage_0='+mileage_0+' , mileage_1='+mileage_1+' , mileage_2='+mileage_2+' : lane=[0,'+current_segment_lanes_cnt+']');
 
                 for(var lane=0 ; lane<=current_segment_lanes_cnt ; lane += 1) {
                     var position_and_pose_0 = mid_position_and_pose_0.rightward(this.road.lane_width * lane);
@@ -202,7 +225,7 @@ class Simulator {
             }
             current_event_start_mileage = road_event.mileage;
         }
-        console.log(positions);
+        // console.log(positions);
 
 
         var road_geo = new THREE.BufferGeometry();
@@ -218,6 +241,164 @@ class Simulator {
         var road_mesh = new THREE.LineSegments(road_geo , road_mat);
 
         return road_mesh;
+    }
+
+    create_lanes_changing_decoration() {
+
+        // const wall_deviation_rad_abs = Math.PI / 6;
+        // var walls_data = [];
+
+        // var doors_data = [];
+
+        var decoration_data = {
+            'add_lane': [],
+            'cancel_lane': [],
+            'entry': [],
+            'exit': [],
+        };
+        var decoration_color = {
+            'add_lane': 'green',
+            'cancel_lane': 'orange',
+            'entry': 'orange',
+            'exit': 'blue',
+        };
+        var decoration_deviation_rad = {
+            'add_lane':    - 80 / 180 * Math.PI,
+            'cancel_lane': + 80 / 180 * Math.PI,
+            'entry': 0,
+            'exit': 0,
+        };
+        var decoration_height = {
+            'add_lane': 0.8,
+            'cancel_lane': 1.4,
+            'entry': 3.8,
+            'exit': 3.8,
+        };
+
+        var current_arc = new PlaneWorldArc(new PlaneWorldPositionAndPose(0 , 0 , 0) , 0);
+        var current_arc_start_mileage = 0;
+        var current_event_start_mileage = 0;
+        var current_segment_lanes_cnt = this.road_data[0].initial_lanes_cnt;
+        for(var road_event_idx=1 ; road_event_idx < this.road_data.length ; road_event_idx += 1) {
+            var road_event = this.road_data[road_event_idx];
+
+            if(['add_lane', 'cancel_lane', 'entry', 'exit'].indexOf(road_event.event_name) >= 0) {
+                var sgn = (['add_lane', 'entry'].indexOf(road_event.event_name) >= 0 ? +1 : -1);
+                var pp = current_arc.calculate_end_position_and_pose(road_event.mileage - current_arc_start_mileage);
+                decoration_data[road_event.event_name].push({
+                    'position_and_pose': pp,
+                    'lanes_cnt_from': current_segment_lanes_cnt,
+                    'lanes_cnt_to': current_segment_lanes_cnt + sgn * road_event.lanes_cnt,
+                    'lanes_cnt_change_abs': road_event.lanes_cnt,
+                    'mid_lane': current_segment_lanes_cnt + sgn * road_event.lanes_cnt / 2,
+                });
+
+                current_segment_lanes_cnt += sgn * road_event.lanes_cnt;
+
+            // }else if(road_event.event_name == 'add_lane' || road_event.event_name === 'cancel_lane') {
+            //     var sgn = (road_event.event_name == 'add_lane' ? +1 : -1);
+            //     var pp = 
+            //         current_arc
+            //         .calculate_end_position_and_pose(road_event.mileage - current_arc_start_mileage)
+            //         .rightward(current_segment_lanes_cnt + sgn * road_event.lanes_cnt / 2)
+            //         .ahead( sgn * road_event.lanes_cnt / 2 * this.road.lane_width * Math.tan(wall_deviation_rad_abs) );
+            //     pp.direction_rad -= sgn * wall_deviation_rad_abs;
+            //     walls_data.push({
+            //         'position_and_pose': pp,
+            //         'color': (road_event.event_name == 'add_lane' ? 'lime' : 'orange'),
+            //         'width': road_event.lanes_cnt * this.road.lane_width / Math.cos(wall_deviation_rad_abs),
+            //     });
+            //     current_segment_lanes_cnt += sgn * road_event.lanes_cnt;
+            // 
+            // }else if(road_event.event_name === 'entry' || road_event.event_name === 'exit') {
+            //     var sgn = (road_event.event_name == 'entry' ? +1 : -1);
+            //     var pp = 
+            //         current_arc
+            //         .calculate_end_position_and_pose(road_event.mileage - current_arc_start_mileage)
+            //         .rightward(current_segment_lanes_cnt + sgn * road_event.lanes_cnt / 2);
+            //     doors_data.push({
+            //         'position_and_pose': pp,
+            //         'color': (road_event.event_name == 'entry' ? 'orange' : 'blue'),
+            //         'width': road_event.lanes_cnt * this.road.lane_width,
+            //     });
+            //     current_segment_lanes_cnt += sgn * road_event.lanes_cnt;
+
+            }else if(road_event.event_name === 'change_curvature') {
+                current_arc = new PlaneWorldArc(current_arc.calculate_end_position_and_pose(road_event.mileage - current_arc_start_mileage) , road_event.curvature);
+                current_arc_start_mileage = road_event.mileage;
+
+            }
+            current_event_start_mileage = road_event.mileage;
+        }
+        decoration_data['entry'].push({
+            'position_and_pose': new PlaneWorldPositionAndPose(0 , 0 , 0),
+            'lanes_cnt_from': 0,
+            'lanes_cnt_to':         this.road.segments[0].lanes_cnt,
+            'lanes_cnt_change_abs': this.road.segments[0].lanes_cnt,
+            'mid_lane':             this.road.segments[0].lanes_cnt / 2,
+        });
+        var last_arc_info = this.road.arcs[this.road.arcs.length-1];
+        decoration_data['exit'].push({
+            'position_and_pose': last_arc_info.arc.calculate_end_position_and_pose(last_arc_info.arc_length),
+            'lanes_cnt_from': 0,
+            'lanes_cnt_to':         this.road.segments[this.road.segments.length-1].lanes_cnt,
+            'lanes_cnt_change_abs': this.road.segments[this.road.segments.length-1].lanes_cnt,
+            'mid_lane':             this.road.segments[this.road.segments.length-1].lanes_cnt / 2,
+        });
+
+        var walls_doors_group = new THREE.Group();
+
+        for(const event_name of ['add_lane', 'cancel_lane']) {
+            var wall_geometry = new THREE.BoxGeometry(0.1 , 1 , 1);
+            var wall_material = new THREE.MeshBasicMaterial({color: decoration_color[event_name]});
+            var wall_ins_mesh = new THREE.InstancedMesh(wall_geometry , wall_material , decoration_data[event_name].length);
+            for(var wall_id = 0 ; wall_id < decoration_data[event_name].length ; wall_id += 1) {
+                var wall_data = decoration_data[event_name][wall_id];
+
+                var transform = new THREE.Object3D();
+
+                var pp = wall_data.position_and_pose
+                            .rightward(wall_data.mid_lane * this.road.lane_width)
+                            .ahead( - wall_data.lanes_cnt_change_abs * this.road.lane_width / 2 * Math.tan(decoration_deviation_rad[event_name]));
+                transform.position.set(pp.x , decoration_height[event_name]/2 , pp.z);
+                transform.rotation.set(0 , -(pp.direction_rad + decoration_deviation_rad[event_name]) , 0);
+
+                var wall_length = wall_data.lanes_cnt_change_abs * this.road.lane_width / Math.cos(decoration_deviation_rad[event_name]);
+                transform.scale.set(1, decoration_height[event_name], wall_length);
+
+                transform.updateMatrix();
+                wall_ins_mesh.setMatrixAt(wall_id , transform.matrix);
+            }
+            walls_doors_group.add(wall_ins_mesh);
+        }
+        for(const event_name of ['entry', 'exit']) {
+            var door_geometry = new THREE.TubeGeometry( new DoorCurve(decoration_height[event_name] , 40) , 41 , 0.04 , 8 , false);
+            // console.log(door_geometry.getAttribute('position'));
+            var door_material = new THREE.MeshBasicMaterial({color: decoration_color[event_name] , wireframe: true});
+            var door_ins_mesh = new THREE.InstancedMesh(door_geometry , door_material , decoration_data[event_name].length);
+            for(var door_id = 0 ; door_id < decoration_data[event_name].length ; door_id += 1) {
+                var door_data = decoration_data[event_name][door_id];
+
+                var transform = new THREE.Object3D();
+
+                var pp = door_data.position_and_pose
+                            .rightward(door_data.mid_lane * this.road.lane_width)
+                            .ahead( - door_data.lanes_cnt_change_abs * this.road.lane_width / 2 * Math.tan(decoration_deviation_rad[event_name]));
+                transform.position.set(pp.x , 0 , pp.z);
+                transform.rotation.set(0 , -(pp.direction_rad + decoration_deviation_rad[event_name]) , 0);
+
+                var door_length = door_data.lanes_cnt_change_abs * this.road.lane_width / Math.cos(decoration_deviation_rad[event_name]);
+                transform.scale.set(1, 1, door_length / 2);
+
+                transform.updateMatrix();
+                door_ins_mesh.setMatrixAt(door_id , transform.matrix);
+            }
+            walls_doors_group.add(door_ins_mesh);
+        }
+
+
+        return walls_doors_group;
+
     }
 
     create_agent_mesh() {
