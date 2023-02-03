@@ -494,6 +494,8 @@ class InteractiveAgent extends PlaneWorldAimedAgent {
             var lane_diff    = nearby_agent.position_and_pose.lane    - this.position_and_pose.lane   ;
 
             if(Math.abs(lane_diff) >= 0.8) continue;
+            // if(lane_diff >= +0.6 && nearby_agent.signal_lights.is_right_on()) continue;
+            // if(lane_diff <= -0.6 && nearby_agent.signal_lights.is_left_on() ) continue;
             if(mileage_diff <= 0) continue;
 
             // var min_lanes_cnt_between_agents = this.position_and_pose.lane;

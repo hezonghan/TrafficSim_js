@@ -32,7 +32,7 @@ class SimpleAgentsGenerator {
         var old_agents_cnt = this.environment.agents_cnt;
         
         // if(old_agents_cnt > 10) return;
-        // if(Object.keys(this.environment.agents).length >= 70) return;
+        if(Object.keys(this.environment.agents).length >= 70) return;
 
         var new_agents_cnt = 0;
         while(new_agents_cnt < current_idle_entries.length && Math.random() < this.p) new_agents_cnt += 1;
